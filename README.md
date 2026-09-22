@@ -1,4 +1,4 @@
-# NOIRÉ Fashion Store
+# ROVMART Fashion Store
 
 A lightweight fashion e-commerce storefront built with HTML5, CSS3, Vanilla JavaScript, Google Sheets and Google Apps Script.
 
