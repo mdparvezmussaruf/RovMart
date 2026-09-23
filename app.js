@@ -1,45 +1,316 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   cleanCart();
+
   renderCartUI();
+
+  // Generate category menu from products.js
+  renderCategoryMenu();
+
+  // Generate all products
   renderProductGrid();
+
   bindGlobalEvents();
+
   initReveal();
+
   initCursor();
 
-  const imagePath = new URLSearchParams(location.search).get("id");
-  if (document.getElementById("productDetail") && imagePath) {
+
+  const imagePath =
+    new URLSearchParams(location.search).get("id");
+
+  if (
+    document.getElementById("productDetail") &&
+    imagePath
+  ) {
     // product.html has an inline call to renderProductDetail().
   }
+
 });
 
-function renderProductGrid() {
-  const grid = document.getElementById("productGrid");
+function renderProductGrid(category = "All products") {
+
+  const grid =
+    document.getElementById("productGrid");
+
   if (!grid) return;
 
-  const available = products.filter(p => p.available);
-  const count = document.getElementById("productCount");
-  if (count) count.textContent = `${available.length} pieces`;
 
-  grid.innerHTML = available.map((product, index) => `
-    <article class="product-card reveal" style="--delay:${index * 70}ms">
-      <a class="product-image-wrap zoom-image" href="product.html?id=${encodeURIComponent(product.id)}" aria-label="View ${escapeHtml(product.name)}">
-        <span class="product-index">${String(index + 1).padStart(2, "0")}</span>
-        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy">
-        <span class="image-hover-label">View piece <b>↗</b></span>
-        <span class="zoom-lens" aria-hidden="true"></span>
-      </a>
-      <div class="product-card-info">
-        <div class="product-copy">
-          <span class="product-category">${escapeHtml(product.category)}</span>
-          <a class="product-title" href="product.html?id=${encodeURIComponent(product.id)}">${escapeHtml(product.name)}</a>
-          <span class="product-price">${formatBDT(product.price)}</span>
-        </div>
-        <button class="button button-small button-outline" type="button" data-add="${product.id}"><span>Add</span><b>+</b></button>
+  const availableProducts =
+    products.filter(product => product.available);
+
+
+  const visibleProducts =
+    category === "All products"
+
+      ? availableProducts
+
+      : availableProducts.filter(
+          product =>
+            product.category === category
+        );
+
+
+  const count =
+    document.getElementById("productCount");
+
+  if (count) {
+
+    count.textContent =
+      `${visibleProducts.length} ${
+        visibleProducts.length === 1
+          ? "piece"
+          : "pieces"
+      }`;
+
+  }
+
+
+  if (!visibleProducts.length) {
+
+    grid.innerHTML = `
+
+      <div class="empty-category">
+
+        <p class="eyebrow">
+          NO PRODUCTS
+        </p>
+
+        <h3>
+          No products in this category yet.
+        </h3>
+
       </div>
-    </article>
-  `).join("");
+
+    `;
+
+    return;
+  }
+
+
+  grid.innerHTML =
+    visibleProducts.map((product, index) => {
+
+      return `
+
+        <article
+          class="product-card reveal"
+          style="--delay:${index * 70}ms"
+        >
+
+          <a
+            class="product-image-wrap zoom-image"
+            href="product.html?id=${encodeURIComponent(product.id)}"
+          >
+
+            <span class="product-index">
+              ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <img
+              src="${escapeHtml(product.image)}"
+              alt="${escapeHtml(product.name)}"
+              loading="lazy"
+            >
+
+            <span class="image-hover-label">
+              View piece <b>↗</b>
+            </span>
+
+            <span
+              class="zoom-lens"
+              aria-hidden="true"
+            ></span>
+
+          </a>
+
+
+          <div class="product-card-info">
+
+            <div class="product-copy">
+
+              <span class="product-category">
+                ${escapeHtml(product.category)}
+              </span>
+
+              <a
+                class="product-title"
+                href="product.html?id=${encodeURIComponent(product.id)}"
+              >
+                ${escapeHtml(product.name)}
+              </a>
+
+              <span class="product-price">
+                ${formatBDT(product.price)}
+              </span>
+
+            </div>
+
+
+            <button
+              class="button button-small button-outline"
+              type="button"
+              data-add="${product.id}"
+            >
+              <span>Add</span>
+              <b>+</b>
+            </button>
+
+          </div>
+
+        </article>
+
+      `;
+
+    }).join("");
+
 
   setupZoomImages();
+
+  initReveal();
+}
+
+
+function filterByCategory(category) {
+
+  renderProductGrid(category);
+
+
+  document
+    .querySelectorAll(".category-item")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.category === category
+      );
+
+    });
+
+
+  closeCategoryMenu();
+
+
+  const shop =
+    document.getElementById("shop");
+
+  if (shop) {
+
+    requestAnimationFrame(() => {
+
+      const top =
+        shop.getBoundingClientRect().top
+        + window.scrollY
+        - 95;
+
+      window.scrollTo({
+
+        top: top,
+
+        behavior: "smooth"
+
+      });
+
+    });
+
+  }
+}
+
+function toggleCategoryMenu() {
+
+  const menu =
+    document.getElementById("categoryMenu");
+
+  const overlay =
+    document.getElementById("categoryOverlay");
+
+  const toggle =
+    document.getElementById("menuToggle");
+
+  if (!menu || !overlay || !toggle) {
+    return;
+  }
+
+
+  const isOpen =
+    !menu.classList.contains("open");
+
+
+  menu.classList.toggle(
+    "open",
+    isOpen
+  );
+
+  overlay.classList.toggle(
+    "hidden",
+    !isOpen
+  );
+
+
+  menu.setAttribute(
+    "aria-hidden",
+    String(!isOpen)
+  );
+
+
+  toggle.setAttribute(
+    "aria-expanded",
+    String(isOpen)
+  );
+
+
+  toggle.classList.toggle(
+    "active",
+    isOpen
+  );
+
+
+  document.body.classList.toggle(
+    "no-scroll",
+    isOpen
+  );
+}
+
+function closeCategoryMenu() {
+
+  const menu =
+    document.getElementById("categoryMenu");
+
+  const overlay =
+    document.getElementById("categoryOverlay");
+
+  const toggle =
+    document.getElementById("menuToggle");
+
+  if (!menu || !overlay || !toggle) {
+    return;
+  }
+
+
+  menu.classList.remove("open");
+
+  overlay.classList.add("hidden");
+
+
+  menu.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+
+  toggle.setAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+
+  toggle.classList.remove("active");
+
+
+  document.body.classList.remove(
+    "no-scroll"
+  );
 }
 
 function renderProductDetail() {
@@ -141,6 +412,52 @@ function setupZoomImages() {
 }
 
 function bindGlobalEvents() {
+
+  document
+  .getElementById("menuToggle")
+  ?.addEventListener(
+    "click",
+    toggleCategoryMenu
+  );
+
+
+document
+  .getElementById("closeMenuBtn")
+  ?.addEventListener(
+    "click",
+    closeCategoryMenu
+  );
+
+
+document
+  .getElementById("categoryOverlay")
+  ?.addEventListener(
+    "click",
+    closeCategoryMenu
+  );
+
+
+document
+  .getElementById("categoryList")
+  ?.addEventListener(
+    "click",
+    event => {
+
+      const button =
+        event.target.closest(
+          "[data-category]"
+        );
+
+      if (!button) return;
+
+      filterByCategory(
+        button.dataset.category
+      );
+
+    }
+  );
+
+
   document.addEventListener("click", event => {
     const add = event.target.closest("[data-add]");
     if (add) addToCart(add.dataset.add);
@@ -180,11 +497,18 @@ function bindGlobalEvents() {
   document.getElementById("orderForm")?.addEventListener("submit", submitOrder);
 
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      closeCartDrawer();
-      closeOrderModal();
-    }
-  });
+
+  if (e.key === "Escape") {
+
+    closeCartDrawer();
+
+    closeOrderModal();
+
+    closeCategoryMenu();
+
+  }
+
+});
 }
 
 function openCartDrawer() {
@@ -230,4 +554,62 @@ function initCursor() {
   if(!dot || window.matchMedia("(pointer: coarse)").matches) return;
   document.addEventListener("pointermove", e => { dot.style.transform=`translate3d(${e.clientX}px,${e.clientY}px,0)`; });
   document.addEventListener("pointerover", e => dot.classList.toggle("cursor-active", !!e.target.closest("a,button,.zoom-image")));
+}
+
+function getCategories() {
+
+  const categories = [
+    ...new Set(
+      products
+        .filter(product => product.available)
+        .map(product => String(product.category || "").trim())
+        .filter(Boolean)
+    )
+  ];
+
+  return [
+    "All products",
+    ...categories
+  ];
+}
+
+
+function renderCategoryMenu() {
+
+  const list =
+    document.getElementById("categoryList");
+
+  if (!list) return;
+
+
+  const categories =
+    getCategories();
+
+
+  list.innerHTML =
+    categories.map((category, index) => {
+
+      return `
+        <button
+          class="category-item ${index === 0 ? "active" : ""}"
+          type="button"
+          data-category="${escapeHtml(category)}"
+        >
+
+          <span class="category-number">
+            ${String(index + 1).padStart(2, "0")}
+          </span>
+
+          <span class="category-item-name">
+            ${escapeHtml(category)}
+          </span>
+
+          <span class="category-arrow">
+            ↗
+          </span>
+
+        </button>
+      `;
+
+    }).join("");
 }
